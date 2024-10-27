@@ -82,3 +82,15 @@ export async function minimalRoomData (): Promise<{[roomId: string]: MinimalRoom
 
   return roomData
 }
+
+export async function resetAllRooms() {
+  // First, delete all current rooms
+  const roomIds = await DB.getRoomIds()
+  await Promise.all(
+    roomIds.map(DB.deleteRoomData))
+
+  // Then, add new data
+  await Promise.all(
+    Object.values(staticRoomData)
+      .map(room => DB.setRoomData(room)))
+}

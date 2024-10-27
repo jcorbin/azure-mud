@@ -1,21 +1,11 @@
 import { AuthenticatedEndpointFunction, LogFn } from '../endpoint'
-import Redis from '../redis'
-import { Room } from '../rooms'
+import { restAllRooms } from '../rooms'
 import roomData from '../rooms/data/roomData.json'
 import { User } from '../user'
 
 const resetRoomData: AuthenticatedEndpointFunction = async (user: User, inputs: any, log: LogFn) => {
   // TODO: Allow this to just wipe a specific room
-
-  // First, delete all current rooms
-  const roomIds = await Redis.getRoomIds()
-  await Promise.all(roomIds.map(Redis.deleteRoomData))
-
-  // Then, add new data
-  await Promise.all(Object.values(roomData).map(room => {
-    return Redis.setRoomData(room as Room)
-  }))
-
+  await resetAllRooms()
   return {
     httpResponse: {
       status: 200,
