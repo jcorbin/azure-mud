@@ -6,30 +6,38 @@ import { Room } from './rooms'
 import Database from './database'
 
 // eslint-disable-next-line import/first
-import { createClient } from 'redis'
+import { createClient, ClientOpts } from 'redis'
 import { v4 as uuid } from 'uuid'
 
 require('dotenv').config()
 
-console.log('Connecting to Redis', process.env.RedisHostname, process.env.RedisPort)
+function redisConnect (verbose = true) {
+  const {
+    RedisPort: portStr = '6379',
+    RedisHostname: hostname = 'localhost',
+    RedisKey: key = '',
+  } = process.env
+  const port = parseInt(portStr)
 
-let redisOpts = {}
-if (process.env.RedisKey) {
-  redisOpts = {
-    auth_pass: process.env.RedisKey,
-    tls: { servername: process.env.RedisHostname }
+  const opts = {} as ClientOpts
+  if (key) {
+    opts.auth_pass = key
+    opts.tls = { servername: hostname }
   }
+
+  const client = createClient(port, hostname, opts)
+
+  if (verbose) {
+    console.log('Connecting to Redis', hostname, port)
+    setTimeout(() => {
+      console.log('Redis connected', client.connected)
+    }, 3000)
+  }
+
+  return client
 }
 
-const cache = createClient(
-  parseInt(process.env.RedisPort),
-  process.env.RedisHostname,
-  redisOpts
-)
-
-setTimeout(() => {
-  console.log('Redis connected', cache.connected)
-}, 3000)
+const cache = redisConnect()
 
 const getCache = promisify(cache.get).bind(cache)
 const setCache = promisify(cache.set).bind(cache)
