@@ -83,14 +83,27 @@ export async function minimalRoomData (): Promise<{[roomId: string]: MinimalRoom
   return roomData
 }
 
-export async function resetAllRooms() {
-  // First, delete all current rooms
-  const roomIds = await DB.getRoomIds()
-  await Promise.all(
-    roomIds.map(DB.deleteRoomData))
-
-  // Then, add new data
-  await Promise.all(
-    Object.values(staticRoomData)
-      .map(room => DB.setRoomData(room)))
+export async function resetAllRooms(
+  log: (mess: string, ...extra: any[]) => void = null
+) {
+  if (log) {
+    // when given a log function, the user cares to watch progress, so we do it in serial
+    for (const roomId of await DB.getRoomIds()) {
+      await DB.deleteRoomData(roomId)
+      log(`deleted room #${roomId}`)
+    }
+    for (const room of Object.values(staticRoomData)) {
+      await DB.setRoomData(room)
+      const { id, ...info } = minimizeRoom(room)
+      log(`loaded room #${id}`, info)
+    }
+  } else {
+    // when going blind, we go with max concurrency
+    const roomIds = await DB.getRoomIds()
+    await Promise.all(
+      roomIds.map(DB.deleteRoomData))
+    await Promise.all(
+      Object.values(staticRoomData)
+        .map(room => DB.setRoomData(room)))
+  }
 }
