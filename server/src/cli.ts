@@ -11,7 +11,7 @@ const commands = {
 
 }
 
-async function main(args = process.argv.slice(2)) {
+async function run(args: string[]) {
   if (!args.length) {
     console.error('possible commands:', Object.keys(commands).sort())
     return
@@ -26,6 +26,14 @@ async function main(args = process.argv.slice(2)) {
   }
 
   await cmd(...rest)
+}
+
+async function main(args = process.argv.slice(2)) {
+  try {
+    await run(args)
+  } finally {
+    DB.close()
+  }
 }
 
 main()

@@ -25,7 +25,10 @@ function redisConnect (verbose = true) {
     opts.tls = { servername: hostname }
   }
 
-  const client = createClient(port, hostname, opts)
+  const client = createClient(port, hostname, opts) as (
+    // NOTE: the redis client does indeed have a closing property,
+    // they just don't list it in their typescript definition
+    ReturnType<typeof createClient> & {closing: boolean})
 
   if (verbose) {
     (async function() {
@@ -35,6 +38,9 @@ function redisConnect (verbose = true) {
         i++
         if (client.connected) {
           console.log('Redis connected after', i/10)
+          break
+        } else if (client.closing) {
+          console.log('Redis closing after', 1/10)
           break
         } else if (i > 30) {
           console.error('Redis failed to connect within 3 seconds')
@@ -77,6 +83,8 @@ interface RedisInternal extends Database {
 
   addSpeaker (userId: string)
   removeSpeaker (userId: string)
+
+  close (): void
 }
 
 const Redis: RedisInternal = {
@@ -449,7 +457,12 @@ const Redis: RedisInternal = {
 
   async getRoomIds (): Promise<string[]> {
     return (await getSet(roomIdsKey)) || []
-  }
+  },
+
+  close () {
+    cache.quit()
+  },
+
 }
 
 const tokenSecretKey = 'tokenSecret'
