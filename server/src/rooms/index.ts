@@ -107,3 +107,19 @@ export async function resetAllRooms(
         .map(room => DB.setRoomData(room)))
   }
 }
+
+export async function resetRoom(
+  roomId: string,
+  log: (mess: string, ...extra: any[]) => void = null
+) {
+  const room = staticRoomData[roomId]
+  await DB.deleteRoomData(roomId)
+  if (log) log(`deleted room #${roomId}`)
+  if (room !== undefined) {
+    await DB.setRoomData(room)
+    if (log) {
+      const { id, ...info } = minimizeRoom(room)
+      log(`loaded room #${id}`, info)
+    }
+  }
+}
