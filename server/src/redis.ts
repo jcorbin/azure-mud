@@ -28,13 +28,31 @@ function redisConnect (verbose = true) {
   const client = createClient(port, hostname, opts)
 
   if (verbose) {
-    console.log('Connecting to Redis', hostname, port)
-    setTimeout(() => {
-      console.log('Redis connected', client.connected)
-    }, 3000)
+    (async function() {
+      console.log('Connecting to Redis', hostname, port)
+      let i = 0
+      for await (const _ of every(100)) {
+        i++
+        if (client.connected) {
+          console.log('Redis connected after', i/10)
+          break
+        } else if (i > 30) {
+          console.error('Redis failed to connect within 3 seconds')
+          break
+        } else if (i % 10 == 0) {
+          console.log('Waiting for redis to connect...', i/10)
+        }
+      }
+    })()
   }
 
   return client
+}
+
+async function* every(delay: number) {
+  while (true) {
+    yield new Promise(resolve => setTimeout(resolve, delay))
+  }
 }
 
 const cache = redisConnect()
