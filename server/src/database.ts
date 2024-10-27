@@ -127,7 +127,7 @@ interface Database {
   // -----------------------------------------------------------------
   // ROOM DATA
   // -----------------------------------------------------------------
-  setRoomData(room: Room)
+  setRoomData(room: Room): Promise<void>
   deleteRoomData(roomId: string): Promise<void>
   getRoomData(roomId: string): Promise<Room>
   getRoomIds(): Promise<string[]>
