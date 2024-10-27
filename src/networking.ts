@@ -70,7 +70,7 @@ let myDispatch: ThunkDispatch<Action, State>
 const inMediaChat: boolean = false
 
 // This used to be part of the `connect` call, but that complicated the new user flow
-export function configureNetworking (userId: string, token: string, dispatch: ThunkDispatch<Action, State>) {
+export function configureNetworking(userId: string, token: string, dispatch: ThunkDispatch<Action, State>) {
   console.log('setting up auth', userId, token)
   myUserId = userId
   myToken = token
@@ -81,7 +81,7 @@ export function configureNetworking (userId: string, token: string, dispatch: Th
 // Can immediately swap these out to use PubSub
 // ---------------------------------------
 
-export async function sendMagicEmail (email: string) {
+export async function sendMagicEmail(email: string) {
   const result = await callAzureFunction('sendMagicEmail', { email })
 
   // If NODE_ENV=development, the server will directly send you a
@@ -90,114 +90,114 @@ export async function sendMagicEmail (email: string) {
   }
 }
 
-export async function pickUpRandomItemFromList (listName: string) {
+export async function pickUpRandomItemFromList(listName: string) {
   await callAzureFunction('pickUpItem', { list: listName })
 }
 
-export async function pickUpItem (item: string) {
+export async function pickUpItem(item: string) {
   await callAzureFunction('pickUpItem', { item })
 }
 
-export async function dropItem () {
+export async function dropItem() {
   await callAzureFunction('pickUpItem', { drop: true })
 }
 
-export async function displayMessage (message: string) {
+export async function displayMessage(message: string) {
   await callAzureFunction('displayMessage', { message: message })
 }
 
-export async function displayMessageFromList (listName: string) {
+export async function displayMessageFromList(listName: string) {
   await callAzureFunction('displayMessage', { list: listName })
 }
 
-export async function orderNewDrink () {
+export async function orderNewDrink() {
   await callAzureFunction('orderNewDrink')
 }
 
-export async function updateProfileColor (userId: string, color: string) {
+export async function updateProfileColor(userId: string, color: string) {
   await callAzureFunction('updateProfileColor', {
     userId: userId,
     color: color
   })
 }
 
-export async function updateFontReward (userId: string, font: string) {
+export async function updateFontReward(userId: string, font: string) {
   await callAzureFunction('updateFontReward', {
     userId: userId,
     font: font
   })
 }
 
-export async function disconnect (userId: string) {
+export async function disconnect(userId: string) {
   await callAzureFunction('disconnect')
 }
 
-export async function deleteRoomNote (noteId: string) {
+export async function deleteRoomNote(noteId: string) {
   await callAzureFunction('deleteRoomNote', { noteId })
 }
 
-export async function deleteObeliskNote (noteId: string) {
+export async function deleteObeliskNote(noteId: string) {
   await callAzureFunction('deleteObeliskNote', { noteId })
 }
 
-export async function likeRoomNote (noteId: string) {
+export async function likeRoomNote(noteId: string) {
   await callAzureFunction('likeRoomNote', { noteId, like: true })
 }
 
-export async function unlikeRoomNote (noteId: string) {
+export async function unlikeRoomNote(noteId: string) {
   await callAzureFunction('likeRoomNote', { noteId, like: false })
 }
 
-export async function likeObeliskNote (noteId: string) {
+export async function likeObeliskNote(noteId: string) {
   await callAzureFunction('likeObeliskNote', { noteId, like: true })
 }
 
-export async function unlikeObeliskNote (noteId: string) {
+export async function unlikeObeliskNote(noteId: string) {
   await callAzureFunction('likeObeliskNote', { noteId, like: false })
 }
 
-export async function addNoteToWall (message: string) {
+export async function addNoteToWall(message: string) {
   if (message !== null && message.length > 0) {
     const id = uuid()
     await callAzureFunction('addRoomNote', { id, message })
   }
 }
 
-export async function addNoteToObelisk (message: string) {
+export async function addNoteToObelisk(message: string) {
   if (message !== null && message.length > 0) {
     const id = uuid()
     await callAzureFunction('addObeliskNote', { id, message })
   }
 }
 
-export async function openOrCloseSpace (spaceIsClosed) {
+export async function openOrCloseSpace(spaceIsClosed) {
   await callAzureFunction('openOrCloseSpace', { spaceIsClosed })
 }
 
-export async function toggleUserBan (userId: string) {
+export async function toggleUserBan(userId: string) {
   await callAzureFunction('banUser', { userId })
 }
 
-export async function toggleUserMod (userId: string) {
+export async function toggleUserMod(userId: string) {
   await callAzureFunction('toggleModStatus', { userId })
 }
 
-export async function toggleUserSpeaker (userId: string, year: string) {
+export async function toggleUserSpeaker(userId: string, year: string) {
   await callAzureFunction('toggleSpeakerStatus', {
     userId,
     year
   })
 }
 
-export async function deleteMessage (messageId: string) {
+export async function deleteMessage(messageId: string) {
   await callAzureFunction('deleteMessage', { messageId })
 }
 
-export async function deleteRoom (roomId: string): Promise<any> {
+export async function deleteRoom(roomId: string): Promise<any> {
   await callAzureFunction('deleteRoom', { roomId })
 }
 
-export async function updateRoom (roomId: string, roomData: Room): Promise<any> {
+export async function updateRoom(roomId: string, roomData: Room): Promise<any> {
   await callAzureFunction('updateRoom', { roomId, roomData })
 }
 
@@ -210,14 +210,14 @@ export async function updateRoom (roomId: string, roomData: Room): Promise<any> 
 // there's *still* a race condition in that if somebody joins/leaves while the HTTP call is transiting
 // then they're invisible and it's not great
 // and there's no system of recourse. but! that already existed!
-export async function connectRoomData (dispatch: ThunkDispatch<Action, State>) {
+export async function connectRoomData(dispatch: ThunkDispatch<Action, State>) {
   const result: RoomResponse = await callAzureFunction('connect')
   if (result.presenceData) {
     dispatch(UpdatedPresenceAction(result.presenceData))
   }
 }
 
-export async function connect () {
+export async function connect() {
   const result: RoomResponse = await callAzureFunction('connect')
 
   console.log(result)
@@ -249,7 +249,7 @@ export async function connect () {
   myDispatch(ReceivedServerSettingsAction(settings))
 }
 
-export async function moveToRoom (roomId: string) {
+export async function moveToRoom(roomId: string) {
   // We used to use the result, but we now use PubSub instead, receiving updatedCurrentRoom.
   // A lot of other stuff still uses HTTP results - ideally we'd just use PubSub.
   const result: RoomResponse | ErrorResponse | any = await callAzureFunction(
@@ -260,7 +260,7 @@ export async function moveToRoom (roomId: string) {
   )
 }
 
-export async function sendChatMessage (id: string, text: string) {
+export async function sendChatMessage(id: string, text: string) {
   // If it's over the character limit
   if (text.length > MESSAGE_MAX_LENGTH) {
     console.log(
@@ -294,7 +294,7 @@ export async function sendChatMessage (id: string, text: string) {
   }
 }
 
-export async function sendCaption (id: string, text: string) {
+export async function sendCaption(id: string, text: string) {
   // TODO: This may or may not be problematic
   if (text.length > MESSAGE_MAX_LENGTH) {
     console.log(
@@ -318,7 +318,7 @@ export async function sendCaption (id: string, text: string) {
   }
 }
 
-export async function fetchProfile (userId: string) {
+export async function fetchProfile(userId: string) {
   const result = await callAzureFunction('fetchProfile', { userId })
   if (result.error) {
     console.log('Could not fetch profile', result.erroc)
@@ -327,7 +327,7 @@ export async function fetchProfile (userId: string) {
   }
 }
 
-export async function resetRoomData (isFromAdminPanel: boolean) {
+export async function resetRoomData(isFromAdminPanel: boolean) {
   const response = await callAzureFunction('resetRoomData')
   if (response.roomData) {
     if (isFromAdminPanel) {
@@ -339,7 +339,7 @@ export async function resetRoomData (isFromAdminPanel: boolean) {
   }
 }
 
-export async function moveAllUsersToEntryway () {
+export async function moveAllUsersToEntryway() {
   const result = await callAzureFunction('moveAllUsersToEntryway')
 
   if (result && result.error) {
@@ -349,7 +349,7 @@ export async function moveAllUsersToEntryway () {
   }
 }
 
-export async function resetBadgeData () {
+export async function resetBadgeData() {
   const response = await callAzureFunction('resetBadgeData')
 
   if (response.unlockedBadges) {
@@ -363,7 +363,7 @@ export async function resetBadgeData () {
   }
 }
 
-export async function equipBadge (badge: Badge, index: number) {
+export async function equipBadge(badge: Badge, index: number) {
   const result = await callAzureFunction('equipBadge', { badge, index })
   if (!result || !result.badges) {
     console.log('ERROR: Server did not return badges from an equipBadge call')
@@ -376,7 +376,7 @@ export async function equipBadge (badge: Badge, index: number) {
 }
 
 // Fetch current obelisk notes, and subscribe to new ones for the sidebar
-export async function startObservingObelisk () {
+export async function startObservingObelisk() {
   const result = await callAzureFunction('startObservingObelisk')
   if (!result || !result.notes) {
     console.log('ERROR: Failed to fetch sidebar obelisk notes')
@@ -388,7 +388,7 @@ export async function startObservingObelisk () {
 }
 
 // Stop subscribing to sidebar obelisk note updates
-export async function stopObservingObelisk () {
+export async function stopObservingObelisk() {
   const result = await callAzureFunction('stopObservingObelisk')
   if (!result) {
     console.log('ERROR: Failed to stop observing obelisk notes')
@@ -398,7 +398,7 @@ export async function stopObservingObelisk () {
 /* Given a username, returns whether that username is registered, banned, etc.
 Because our server auth flow assumes a full user, but this can be called with unregistered users,
 this is not an authenticated call. */
-export async function checkIsRegistered (userId: string): Promise<{
+export async function checkIsRegistered(userId: string): Promise<{
   registeredUsername: string;
   spaceIsClosed: boolean;
   isMod: string;
@@ -414,21 +414,21 @@ export async function checkIsRegistered (userId: string): Promise<{
 }
 
 // These 3 functions are only used by admin.
-export async function getRoomIds (): Promise<string[]> {
+export async function getRoomIds(): Promise<string[]> {
   const result = await callAzureFunction('getRoomIds')
   if (result.roomIds) {
     return result.roomIds
   }
 }
 
-export async function getRoom (roomId: string): Promise<Room> {
+export async function getRoom(roomId: string): Promise<Room> {
   const result = await callAzureFunction('getRoom', { roomId })
   if (result.room) {
     return result.room
   }
 }
 
-export async function getAllRooms (): Promise<{ [roomId: string]: Room }> {
+export async function getAllRooms(): Promise<{ [roomId: string]: Room }> {
   const result = await callAzureFunction('getAllRooms')
   if (result.roomData) {
     return result.roomData
@@ -438,16 +438,16 @@ export async function getAllRooms (): Promise<{ [roomId: string]: Room }> {
 // "Real" HTTP Functions
 // used just as an HTTP request, do not refactor to WS
 // ---------------------------------------------------------------
-export async function fetchTwilioToken () {
+export async function fetchTwilioToken() {
   return await callAzureFunction('twilioToken')
 }
 
-export async function fetchCognitiveServicesKey () {
+export async function fetchCognitiveServicesKey() {
   return await callAzureFunction('cognitiveServicesKey')
 }
 
 // If isNewUser is true, a successful update will refresh the entire page instead of dismissing a modal
-export async function updateProfile (user: Partial<User>, isNew: boolean) {
+export async function updateProfile(user: Partial<User>, isNew: boolean) {
   const result = await callAzureFunction('updateProfile', { user, isNew })
   if (result.valid) {
     if (isNew) {
@@ -462,7 +462,7 @@ export async function updateProfile (user: Partial<User>, isNew: boolean) {
 }
 
 // These are only for admins
-export async function updateServerSettings (serverSettings: ServerSettings) {
+export async function updateServerSettings(serverSettings: ServerSettings) {
   const result = await callAzureFunction('serverSettings', serverSettings)
   if (result) {
     myDispatch(HideModalAction())
@@ -471,7 +471,7 @@ export async function updateServerSettings (serverSettings: ServerSettings) {
 
 // Setup
 
-function generateEventMapping (userId: string, dispatch: Dispatch<Action>) {
+function generateEventMapping(userId: string, dispatch: Dispatch<Action>) {
   return {
     playerConnected: (user) => {
       console.log('Player joined!', user)
@@ -602,7 +602,7 @@ function generateEventMapping (userId: string, dispatch: Dispatch<Action>) {
   }
 }
 
-export async function connectPubSub (eventMapping: {
+export async function connectPubSub(eventMapping: {
   [event: string]: Function;
 }) {
   // negotiate
@@ -631,11 +631,11 @@ export async function connectPubSub (eventMapping: {
   })
 }
 
-function azureEndpoint (endpoint: string) {
+function azureEndpoint(endpoint: string) {
   return `${ServerHostname}/api/${endpoint}`
 }
 
-async function callAzureFunctionGet (endpoint: string): Promise<any> {
+async function callAzureFunctionGet(endpoint: string): Promise<any> {
   try {
     const r = await axios.get(azureEndpoint(endpoint), {
       withCredentials: true,
@@ -654,7 +654,7 @@ async function callAzureFunctionGet (endpoint: string): Promise<any> {
   }
 }
 
-async function callAzureFunction (endpoint: string, body?: any): Promise<any> {
+async function callAzureFunction(endpoint: string, body?: any): Promise<any> {
   try {
     const r = await axios.post(azureEndpoint(endpoint), body, {
       withCredentials: true,
