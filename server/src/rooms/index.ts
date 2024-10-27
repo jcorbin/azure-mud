@@ -59,15 +59,16 @@ export interface MinimalRoom {
   displayName: string;
   shortName: string;
   hidden: boolean;
- }
+}
 
 function minimizeRoom (room: Room): MinimalRoom {
-  return {
-    id: room.id,
-    displayName: room.displayName,
-    shortName: room.shortName,
-    hidden: room.hidden
-  }
+  const {
+    id,
+    displayName,
+    shortName,
+    hidden = false
+  } = room
+  return { id, displayName, shortName, hidden }
 }
 
 export async function minimalRoomData (): Promise<{[roomId: string]: MinimalRoom}> {
