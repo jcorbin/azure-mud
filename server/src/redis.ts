@@ -11,7 +11,7 @@ import { v4 as uuid } from 'uuid'
 
 require('dotenv').config()
 
-function redisConnect (verbose = true) {
+function redisConnect(verbose = true) {
   const {
     RedisPort: portStr = '6379',
     RedisHostname: hostname = 'localhost',
@@ -28,7 +28,7 @@ function redisConnect (verbose = true) {
   const client = createClient(port, hostname, opts) as (
     // NOTE: the redis client does indeed have a closing property,
     // they just don't list it in their typescript definition
-    ReturnType<typeof createClient> & {closing: boolean})
+    ReturnType<typeof createClient> & { closing: boolean })
 
   if (verbose) {
     (async function() {
@@ -37,16 +37,16 @@ function redisConnect (verbose = true) {
       for await (const _ of every(100)) {
         i++
         if (client.connected) {
-          console.log('Redis connected after', i/10)
+          console.log('Redis connected after', i / 10)
           break
         } else if (client.closing) {
-          console.log('Redis closing after', 1/10)
+          console.log('Redis closing after', 1 / 10)
           break
         } else if (i > 30) {
           console.error('Redis failed to connect within 3 seconds')
           break
         } else if (i % 10 == 0) {
-          console.log('Waiting for redis to connect...', i/10)
+          console.log('Waiting for redis to connect...', i / 10)
         }
       }
     })()
@@ -75,20 +75,20 @@ const getSet = promisify(cache.smembers).bind(cache)
 const redisKeys = promisify(cache.keys).bind(cache)
 
 interface RedisInternal extends Database {
-  addOccupantToRoom (roomId: string, userId: string),
-  removeOccupantFromRoom (roomId: string, userId: string)
+  addOccupantToRoom(roomId: string, userId: string),
+  removeOccupantFromRoom(roomId: string, userId: string)
 
-  addMod (userId: string)
-  removeMod (userId: string)
+  addMod(userId: string)
+  removeMod(userId: string)
 
-  addSpeaker (userId: string)
-  removeSpeaker (userId: string)
+  addSpeaker(userId: string)
+  removeSpeaker(userId: string)
 
-  close (): void
+  close(): void
 }
 
 const Redis: RedisInternal = {
-  async getOrGenerateTokenSecret (): Promise<string> {
+  async getOrGenerateTokenSecret(): Promise<string> {
     // XXX should unquote tokenSecretKey?
     const secret = await getCache('tokenSecretKey')
     if (secret) {
@@ -102,7 +102,7 @@ const Redis: RedisInternal = {
     return secret
   },
 
-  async getOrGenerateUserIdForEmail (email: string): Promise<string> {
+  async getOrGenerateUserIdForEmail(email: string): Promise<string> {
     const userId = await getCache(userIdKeyForEmail(email))
     if (userId) {
       return userId
@@ -113,11 +113,11 @@ const Redis: RedisInternal = {
     }
   },
 
-  async getActiveUsers (): Promise<string[]> {
+  async getActiveUsers(): Promise<string[]> {
     return getSet(activeUsersKey) || []
   },
 
-  async getAllUserIds () {
+  async getAllUserIds() {
     return await getSet(allUserIdsKey) || []
   },
 
@@ -125,14 +125,14 @@ const Redis: RedisInternal = {
   // Storing all users as a Redis set is tricky,
   // since profile updates need to replace the existing user,
   // but I'm not sure we can key our JSONified blobs in a set
-  async getAllUsers () {
+  async getAllUsers() {
     const allUserIds: string[] = await getSet(allUserIdsKey)
     return await Promise.all(allUserIds.map(async u => {
       return await Redis.getUser(u)
     }))
   },
 
-  async allRoomOccupants (): Promise<{[roomId: string]: string[]}> {
+  async allRoomOccupants(): Promise<{ [roomId: string]: string[] }> {
     // TODO: Run "KEYS room_ to get all dynamic rooms"
     const allRoomIds = await Redis.getRoomIds()
     const data = {}
@@ -143,15 +143,15 @@ const Redis: RedisInternal = {
     return data
   },
 
-  async getUserHeartbeat (userId: string): Promise<number> {
+  async getUserHeartbeat(userId: string): Promise<number> {
     return await getCache(heartbeatKeyForUser(userId))
   },
 
-  async setUserHeartbeat (user: User) {
+  async setUserHeartbeat(user: User) {
     await setCache(heartbeatKeyForUser(user.id), new Date().valueOf())
   },
 
-  async setUserAsActive (user: User, isActive: boolean = true) {
+  async setUserAsActive(user: User, isActive: boolean = true) {
     if (isActive) {
       return await addToSet(activeUsersKey, user.id)
     } else {
@@ -160,7 +160,7 @@ const Redis: RedisInternal = {
     }
   },
 
-  async getUserIdForUsername (username: string, onlineUsersOnly: boolean) {
+  async getUserIdForUsername(username: string, onlineUsersOnly: boolean) {
     const userId = await getCache(userIdKeyForUsername(username))
     if (onlineUsersOnly) {
       const activeUsers = await Redis.getActiveUsers()
@@ -173,19 +173,19 @@ const Redis: RedisInternal = {
 
   // Room presence
 
-  async roomOccupants (roomId: string) {
+  async roomOccupants(roomId: string) {
     const presenceKey = roomPresenceKey(roomId)
     return await getSet(presenceKey) || []
   },
 
-  async addOccupantToRoom (roomId: string, userId: string) {
+  async addOccupantToRoom(roomId: string, userId: string) {
     await Redis.setPartialUserProfile(userId, { roomId })
 
     const presenceKey = roomPresenceKey(roomId)
     return await addToSet(presenceKey, userId)
   },
 
-  async removeOccupantFromRoom (roomId: string, userId: string) {
+  async removeOccupantFromRoom(roomId: string, userId: string) {
     // WARNING: Note that this consciously *does not* remove the current roomId
     // from that user's User object.
     // The design here is that, when someone logs off / is set inactive, this is called
@@ -197,7 +197,7 @@ const Redis: RedisInternal = {
     return await removeFromSet(presenceKey, userId)
   },
 
-  async setCurrentRoomForUser (user: User, roomId: string) {
+  async setCurrentRoomForUser(user: User, roomId: string) {
     if (user.roomId !== roomId) {
       console.log('Removing from last room')
       await Redis.removeOccupantFromRoom(user.roomId, user.id)
@@ -206,7 +206,7 @@ const Redis: RedisInternal = {
     await Redis.addOccupantToRoom(roomId, user.id)
   },
 
-  async updateVideoPresenceForUser (user: User, isActive: boolean) {
+  async updateVideoPresenceForUser(user: User, isActive: boolean) {
     if (isActive) {
       await addToSet(videoPresenceKey(user.roomId), user.id)
     } else {
@@ -216,12 +216,12 @@ const Redis: RedisInternal = {
     return await Redis.getVideoPresenceForRoom(user.roomId)
   },
 
-  async getVideoPresenceForRoom (roomId: string) {
+  async getVideoPresenceForRoom(roomId: string) {
     return await getSet(videoPresenceKey(roomId)) || []
   },
 
   // User
-  async getUser (userId: string) {
+  async getUser(userId: string) {
     const userData = await getCache(profileKeyForUser(userId))
 
     if (!userData) {
@@ -236,14 +236,14 @@ const Redis: RedisInternal = {
     return user
   },
 
-  async setPartialUserProfile (userId: string, user: Partial<User>): Promise<User> {
+  async setPartialUserProfile(userId: string, user: Partial<User>): Promise<User> {
     const existingUser = await Redis.getUser(userId)
     const data = { ...existingUser, ...user }
     return await Redis.setUserProfile(userId, data)
   },
 
   // TODO: it would be great if this function accepted Partial<User>
-  async setUserProfile (userId: string, user: User): Promise<User> {
+  async setUserProfile(userId: string, user: User): Promise<User> {
     await setCache(profileKeyForUser(userId), JSON.stringify(user))
     await addToSet(allUserIdsKey, userId)
     await setCache(userIdKeyForUsername(user.username), user.id)
@@ -251,34 +251,34 @@ const Redis: RedisInternal = {
     return user
   },
 
-  async lastShoutedForUser (userId: string) {
+  async lastShoutedForUser(userId: string) {
     const date = await getCache(shoutKeyForUser(userId))
     if (date) {
       return new Date(JSON.parse(date))
     }
   },
 
-  async userJustShouted (user: User) {
+  async userJustShouted(user: User) {
     await setCache(shoutKeyForUser(user.id), JSON.stringify(new Date()))
   },
 
   // TODO: this used to set some now-deprecated presence data
   // make sure this actually works
-  async banUser (user: User, isBanned: boolean = true) {
+  async banUser(user: User, isBanned: boolean = true) {
     const profile = await Redis.getUser(user.id)
     profile.isBanned = isBanned
     await Redis.setUserProfile(user.id, profile)
   },
 
-  async modList (): Promise<string[]> {
+  async modList(): Promise<string[]> {
     return await getSet(modListKey) || []
   },
 
-  async speakerList (): Promise<string[]> {
+  async speakerList(): Promise<string[]> {
     return await getSet(speakerListKey) || []
   },
 
-  async setModStatus (userId: string, isMod: boolean) {
+  async setModStatus(userId: string, isMod: boolean) {
     if (isMod) {
       await Redis.addMod(userId)
     } else {
@@ -289,15 +289,15 @@ const Redis: RedisInternal = {
     await Redis.setUserProfile(userId, profile)
   },
 
-  async addMod (userId: string) {
+  async addMod(userId: string) {
     await addToSet(modListKey, userId)
   },
 
-  async removeMod (userId: string) {
+  async removeMod(userId: string) {
     await removeFromSet(modListKey, userId)
   },
 
-  async setSpeakerStatus (userId: string, isSpeaker: boolean) {
+  async setSpeakerStatus(userId: string, isSpeaker: boolean) {
     if (isSpeaker) {
       await Redis.addSpeaker(userId)
     } else {
@@ -309,16 +309,16 @@ const Redis: RedisInternal = {
     return profile
   },
 
-  async addSpeaker (userId: string) {
+  async addSpeaker(userId: string) {
     await addToSet(speakerListKey, userId)
   },
 
-  async removeSpeaker (userId: string) {
+  async removeSpeaker(userId: string) {
     await removeFromSet(speakerListKey, userId)
   },
 
   // Server settings
-  async getServerSettings (): Promise<ServerSettings> {
+  async getServerSettings(): Promise<ServerSettings> {
     const rawServerSettings = await getCache(serverSettingsKey)
     if (rawServerSettings) {
       return toServerSettings(JSON.parse(rawServerSettings))
@@ -327,7 +327,7 @@ const Redis: RedisInternal = {
     }
   },
 
-  async setServerSettings (serverSettings: ServerSettings): Promise<ServerSettings> {
+  async setServerSettings(serverSettings: ServerSettings): Promise<ServerSettings> {
     const oldServerSettings = await Redis.getServerSettings()
     await setCache(serverSettingsKey, JSON.stringify({ ...oldServerSettings, ...serverSettings }))
 
@@ -338,7 +338,7 @@ const Redis: RedisInternal = {
   // That's complicated because we currently store an array of full objects, but deleting/liking is referenced by the ID within the objects
 
   // Post-it notes
-  async addRoomNote (roomId: string, note: RoomNote) {
+  async addRoomNote(roomId: string, note: RoomNote) {
     const rawNotes = await getCache(roomNotesKey(roomId))
     let notes: RoomNote[] = []
     if (rawNotes) {
@@ -352,7 +352,7 @@ const Redis: RedisInternal = {
     await setCache(roomNotesKey(roomId), JSON.stringify(notes))
   },
 
-  async deleteRoomNote (roomId: string, noteId: string) {
+  async deleteRoomNote(roomId: string, noteId: string) {
     const rawNotes = await getCache(roomNotesKey(roomId))
     let notes: RoomNote[] = []
     if (rawNotes) {
@@ -364,7 +364,7 @@ const Redis: RedisInternal = {
     await setCache(roomNotesKey(roomId), JSON.stringify(notes))
   },
 
-  async likeRoomNote (roomId: string, noteId: string, userId: string) {
+  async likeRoomNote(roomId: string, noteId: string, userId: string) {
     const rawNotes = await getCache(roomNotesKey(roomId))
     let notes: RoomNote[] = []
     if (rawNotes) {
@@ -385,7 +385,7 @@ const Redis: RedisInternal = {
     return []
   },
 
-  async unlikeRoomNote (roomId: string, noteId: string, userId: string) {
+  async unlikeRoomNote(roomId: string, noteId: string, userId: string) {
     const rawNotes = await getCache(roomNotesKey(roomId))
     let notes: RoomNote[] = []
     if (rawNotes) {
@@ -401,7 +401,7 @@ const Redis: RedisInternal = {
     return []
   },
 
-  async getRoomNotes (roomId: string): Promise<RoomNote[]> {
+  async getRoomNotes(roomId: string): Promise<RoomNote[]> {
     const rawNotes = await getCache(roomNotesKey(roomId))
     let notes: RoomNote[] = []
     if (rawNotes) {
@@ -411,21 +411,21 @@ const Redis: RedisInternal = {
     return notes
   },
 
-  async isSpaceClosed (): Promise<boolean> {
+  async isSpaceClosed(): Promise<boolean> {
     return JSON.parse(await getCache(spaceAvailabilityKey))
   },
 
-  async setSpaceAvailability (open: boolean) {
+  async setSpaceAvailability(open: boolean) {
     return await setCache(spaceAvailabilityKey, open)
   },
 
   //
 
-  async webhookDeployKey () {
+  async webhookDeployKey() {
     return await getCache('deployWebhookKey')
   },
 
-  async setWebhookDeployKey (key: string) {
+  async setWebhookDeployKey(key: string) {
     return await setCache('deployWebhookKey', key)
   },
 
@@ -433,7 +433,7 @@ const Redis: RedisInternal = {
 
   // This is currently only accessed when resetRoomData is called, and on admin CMS update
   // If that changes, consider adding more security / tightening access to this
-  async setRoomData (room: Room) {
+  async setRoomData(room: Room) {
     await setCache(roomFuzzySearchKey(room.shortName.replace(' ', '').toUpperCase()), room.id)
     await setCache(roomFuzzySearchKey(room.id.replace(' ', '').toUpperCase()), room.id)
     await setCache(roomFuzzySearchKey(room.displayName.replace(' ', '').toUpperCase()), room.id)
@@ -442,25 +442,25 @@ const Redis: RedisInternal = {
     return await setCache(roomDataKey(room.id), JSON.stringify(room))
   },
 
-  async getRoomData (roomId: string): Promise<Room> {
+  async getRoomData(roomId: string): Promise<Room> {
     // TODO: Also fetch note wall data
     return JSON.parse(await getCache(roomDataKey(roomId)))
   },
 
-  async getRoomIdFromFuzzySearch (search: string): Promise<string|undefined> {
+  async getRoomIdFromFuzzySearch(search: string): Promise<string | undefined> {
     return await getCache(roomFuzzySearchKey(search))
   },
 
-  async deleteRoomData (roomId: string): Promise<void> {
+  async deleteRoomData(roomId: string): Promise<void> {
     await removeFromSet(roomIdsKey, roomId)
     return await del(roomDataKey(roomId))
   },
 
-  async getRoomIds (): Promise<string[]> {
+  async getRoomIds(): Promise<string[]> {
     return (await getSet(roomIdsKey)) || []
   },
 
-  close () {
+  close() {
     cache.quit()
   },
 
@@ -479,43 +479,43 @@ const allUserIdsKey = 'allUserIds'
 
 const roomIdsKey = 'roomIds'
 
-function userIdKeyForEmail (email: string): string {
+function userIdKeyForEmail(email: string): string {
   return `userid_${email}`
 }
 
-function roomDataKey (roomId: string): string {
+function roomDataKey(roomId: string): string {
   return `room_${roomId}`
 }
 
-function shoutKeyForUser (user: string): string {
+function shoutKeyForUser(user: string): string {
   return `${user}Shout`
 }
 
-function profileKeyForUser (userId: string): string {
+function profileKeyForUser(userId: string): string {
   return `${userId}Profile`
 }
 
-function userIdKeyForUsername (username: string): string {
+function userIdKeyForUsername(username: string): string {
   return `${username}Username`
 }
 
-function heartbeatKeyForUser (user: string): string {
+function heartbeatKeyForUser(user: string): string {
   return `${user}Heartbeat`
 }
 
-function roomPresenceKey (roomName: string): string {
+function roomPresenceKey(roomName: string): string {
   return `${roomName}Presence`
 }
 
-function roomFuzzySearchKey (search: string): string {
+function roomFuzzySearchKey(search: string): string {
   return `${search}RoomSearch`
 }
 
-function roomNotesKey (roomId: string): string {
+function roomNotesKey(roomId: string): string {
   return `${roomId}Notes`
 }
 
-export function videoPresenceKey (roomId: string) {
+export function videoPresenceKey(roomId: string) {
   return `${roomId}PresenceVideo`
 }
 
