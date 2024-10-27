@@ -89,6 +89,7 @@ interface RedisInternal extends Database {
 
 const Redis: RedisInternal = {
   async getOrGenerateTokenSecret (): Promise<string> {
+    // XXX should unquote tokenSecretKey?
     const secret = await getCache('tokenSecretKey')
     if (secret) {
       console.log('Found secret', secret)
