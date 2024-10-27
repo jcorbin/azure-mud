@@ -6,30 +6,62 @@ import { Room } from './rooms'
 import Database from './database'
 
 // eslint-disable-next-line import/first
-import { createClient } from 'redis'
+import { createClient, ClientOpts } from 'redis'
 import { v4 as uuid } from 'uuid'
 
 require('dotenv').config()
 
-console.log('Connecting to Redis', process.env.RedisHostname, process.env.RedisPort)
+function redisConnect (verbose = true) {
+  const {
+    RedisPort: portStr = '6379',
+    RedisHostname: hostname = 'localhost',
+    RedisKey: key = '',
+  } = process.env
+  const port = parseInt(portStr)
 
-let redisOpts = {}
-if (process.env.RedisKey) {
-  redisOpts = {
-    auth_pass: process.env.RedisKey,
-    tls: { servername: process.env.RedisHostname }
+  const opts = {} as ClientOpts
+  if (key) {
+    opts.auth_pass = key
+    opts.tls = { servername: hostname }
+  }
+
+  const client = createClient(port, hostname, opts) as (
+    // NOTE: the redis client does indeed have a closing property,
+    // they just don't list it in their typescript definition
+    ReturnType<typeof createClient> & {closing: boolean})
+
+  if (verbose) {
+    (async function() {
+      console.log('Connecting to Redis', hostname, port)
+      let i = 0
+      for await (const _ of every(100)) {
+        i++
+        if (client.connected) {
+          console.log('Redis connected after', i/10)
+          break
+        } else if (client.closing) {
+          console.log('Redis closing after', 1/10)
+          break
+        } else if (i > 30) {
+          console.error('Redis failed to connect within 3 seconds')
+          break
+        } else if (i % 10 == 0) {
+          console.log('Waiting for redis to connect...', i/10)
+        }
+      }
+    })()
+  }
+
+  return client
+}
+
+async function* every(delay: number) {
+  while (true) {
+    yield new Promise(resolve => setTimeout(resolve, delay))
   }
 }
 
-const cache = createClient(
-  parseInt(process.env.RedisPort),
-  process.env.RedisHostname,
-  redisOpts
-)
-
-setTimeout(() => {
-  console.log('Redis connected', cache.connected)
-}, 3000)
+const cache = redisConnect()
 
 const getCache = promisify(cache.get).bind(cache)
 const setCache = promisify(cache.set).bind(cache)
@@ -51,6 +83,8 @@ interface RedisInternal extends Database {
 
   addSpeaker (userId: string)
   removeSpeaker (userId: string)
+
+  close (): void
 }
 
 const Redis: RedisInternal = {
@@ -423,7 +457,12 @@ const Redis: RedisInternal = {
 
   async getRoomIds (): Promise<string[]> {
     return (await getSet(roomIdsKey)) || []
-  }
+  },
+
+  close () {
+    cache.quit()
+  },
+
 }
 
 const tokenSecretKey = 'tokenSecret'

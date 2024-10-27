@@ -59,15 +59,16 @@ export interface MinimalRoom {
   displayName: string;
   shortName: string;
   hidden: boolean;
- }
+}
 
 function minimizeRoom (room: Room): MinimalRoom {
-  return {
-    id: room.id,
-    displayName: room.displayName,
-    shortName: room.shortName,
-    hidden: room.hidden
-  }
+  const {
+    id,
+    displayName,
+    shortName,
+    hidden = false
+  } = room
+  return { id, displayName, shortName, hidden }
 }
 
 export async function minimalRoomData (): Promise<{[roomId: string]: MinimalRoom}> {
@@ -80,4 +81,45 @@ export async function minimalRoomData (): Promise<{[roomId: string]: MinimalRoom
     })
 
   return roomData
+}
+
+export async function resetAllRooms(
+  log: (mess: string, ...extra: any[]) => void = null
+) {
+  if (log) {
+    // when given a log function, the user cares to watch progress, so we do it in serial
+    for (const roomId of await DB.getRoomIds()) {
+      await DB.deleteRoomData(roomId)
+      log(`deleted room #${roomId}`)
+    }
+    for (const room of Object.values(staticRoomData)) {
+      await DB.setRoomData(room)
+      const { id, ...info } = minimizeRoom(room)
+      log(`loaded room #${id}`, info)
+    }
+  } else {
+    // when going blind, we go with max concurrency
+    const roomIds = await DB.getRoomIds()
+    await Promise.all(
+      roomIds.map(DB.deleteRoomData))
+    await Promise.all(
+      Object.values(staticRoomData)
+        .map(room => DB.setRoomData(room)))
+  }
+}
+
+export async function resetRoom(
+  roomId: string,
+  log: (mess: string, ...extra: any[]) => void = null
+) {
+  const room = staticRoomData[roomId]
+  await DB.deleteRoomData(roomId)
+  if (log) log(`deleted room #${roomId}`)
+  if (room !== undefined) {
+    await DB.setRoomData(room)
+    if (log) {
+      const { id, ...info } = minimizeRoom(room)
+      log(`loaded room #${id}`, info)
+    }
+  }
 }

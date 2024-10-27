@@ -11,6 +11,8 @@
     "deploy": "func azure functionapp publish roguelike-celebration-mud",
     "prestart": "npm run build",
     "start": "func start",
+    "resetRooms": "tsx src/cli.ts resetRooms",
+    "resetRoom": "tsx src/cli.ts resetRoom",
     "test": "echo \"No tests yet...\""
   },
   "dependencies": {
